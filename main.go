@@ -21,6 +21,11 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 		_, err := w.Write([]byte(darkmode))
 		if err != nil {
 			slog.Error("What?", "error", err)
@@ -31,4 +36,3 @@ func main() {
 	slog.Info("Darkmode started", "address", address, "darkmode", darkmode)
 	http.ListenAndServe(address, nil)
 }
-
