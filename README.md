@@ -1,6 +1,13 @@
-# DARKMODE
+# Darkmode
 
-Tjänsten lyssnar på `https://darkmode.datasektionen.se/`
+## API
 
-Den kommer returnera "true" (info ska gömmas) eller "false" (info ska visas) beroende på ifall darkmode är aktiverat eller inte.
-Andra sidor lyssnar på denna för att avgöra vilken information som ska visas under motagningen och vilken info som ska gömmas.
+GET `https://darkmode.datasektionen.se/` - returns the current darkmode status as either `true` or `false` with the `Content-Type` header set to `application/json`.
+
+## Env variables
+
+| Name     | Description                                                                                                                                                               |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PORT     | The port to listen for connections on                                                                                                                                     |
+| DARKMODE | Either `true` or `false`. Defaults to `true`                                                                                                                              |
+| WEBHOOKS | A list of urls separated by commas. A GET request will be sent to each of these with the header `X-Darkmode-Event: updated` when the darkmode status (might have) changed |
