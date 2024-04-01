@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darkmode Admin</title>
+    <style>
+* {
+    padding: 0;
+    margin: 0;
+}
+body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background-color: {{ if .darkmode -}} black {{- else -}} white {{- end }};
+}
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+img {
+    height: 28rem;
+}
+    </style>
+</head>
+<body>
+    <form method="POST" action="/">
+        <input type="hidden" name="darkmode" value="{{ not .darkmode }}">
+        <button><img src="/static/button.png"></button>
+    </form>
+</body>
+</html>

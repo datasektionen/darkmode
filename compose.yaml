@@ -1,0 +1,24 @@
+services:
+  app:
+    build: .
+    environment:
+      - PORT=2000
+      - DARKMODE=true
+      - LOGIN_FRONTEND_URL=http://localhost:7002
+      - LOGIN_API_URL=http://login:7002
+      - LOGIN_API_KEY=:)
+      - PLS_URL=http://login:7001
+      - REDIS_URL=redis://:darkmode@redis:6379
+    env_file:
+      - .env
+    ports: [ 2000:2000 ]
+    develop:
+      watch:
+        - path: .
+          action: rebuild
+  redis:
+    image: redis:7-alpine3.19
+    command: redis-server --save 20 1 --loglevel warning --requirepass darkmode
+  login:
+    image: ghcr.io/datasektionen/nyckeln-under-dorrmattan
+    ports: [ 7002:7002 ]
