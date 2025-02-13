@@ -1,4 +1,4 @@
-name: Deploy Development
+name: Deploy
 
 on:
   push:
@@ -8,20 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Git checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    # https://github.com/marketplace/actions/dokku-deploy-action?version=v1
-    - name: Push to medusa
-      uses: idoberko2/dokku-deploy-github-action@v1
-      with:
-        ssh-private-key: ${{ secrets.MEDUSA_GLOBAL_DEPLOY_KEY }}
-        dokku-user: 'dokku'
-        remote-branch: 'master'
-        git-push-flags: '--force'
-        dokku-host: 'medusa.datasektionen.se'
-        app-name: 'darkmode'
+      - name: Deploy to Nomad
+        uses: datasektionen/nomad-deploy@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          nomad-token: ${{ secrets.NOMAD_TOKEN }}
+          nomad-addr: ${{ vars.NOMAD_ADDR }}
