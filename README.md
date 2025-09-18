@@ -13,9 +13,10 @@ GET `https://darkmode.datasektionen.se/` - returns the current darkmode status a
 | `LOGIN_FRONTEND_URL` | Origin at which the browser can reach the login system's frontend                                                                                                         |
 | `LOGIN_API_URL`      | Origin at which the backend can reach the login system's api                                                                                                              |
 | `LOGIN_API_KEY`      | API key for login                                                                                                                                                         |
-| `PLS_URL`            | Origin to pls                                                                                                                                                             |
+| `HIVE_URL`           | Origin to hive                                                                                                                                                            |
+| `HIVE_API_KEY`       | API key for Hive with `$hive:api-check-permissions` permission                                                                                                            |
 | `REDIS_URL`          | Where to connect to redis. Example: `redis://:password@hostname:6379`                                                                                                     |
 
 ## Other systems
 
-Darkmode depends on login and pls. The system name in pls is `darkmode` and it checks the permission `switch`.
+Darkmode depends on login and Hive. The system name in Hive is `darkmode` and it checks the permission `switch`.

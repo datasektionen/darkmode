@@ -29,12 +29,13 @@ job "darkmode" {
         data        = <<ENV
 {{ with nomadVar "nomad/jobs/darkmode" }}
 LOGIN_API_KEY={{ .login_api_key }}
+HIVE_API_KEY={{ .hive_api_key }}
 DATABASE_URL=postgresql://darkmode:{{ .database_password }}@postgres.dsekt.internal:5432/darkmode
 {{ end }}
 PORT={{ env "NOMAD_PORT_http" }}
 LOGIN_API_URL=http://sso.nomad.dsekt.internal/legacyapi
 LOGIN_FRONTEND_URL=https://sso.datasektionen.se/legacyapi
-PLS_URL=https://pls.datasektionen.se
+HIVE_URL=https://hive.datasektionen.se
 WEBHOOKS=http://taitan.nomad.dsekt.internal/
 ENV
         destination = "local/.env"

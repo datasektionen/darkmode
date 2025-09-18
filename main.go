@@ -30,7 +30,8 @@ type service struct {
 	loginFrontendURL string
 	loginAPIURL      string
 	loginAPIKey      string
-	plsURL           string
+	hiveURL          string
+	hiveAPIKey       string
 	webhookURLs      []string
 	t                *template.Template
 }
@@ -72,7 +73,8 @@ func main() {
 		loginFrontendURL: os.Getenv("LOGIN_FRONTEND_URL"),
 		loginAPIURL:      os.Getenv("LOGIN_API_URL"),
 		loginAPIKey:      os.Getenv("LOGIN_API_KEY"),
-		plsURL:           os.Getenv("PLS_URL"),
+		hiveURL:          os.Getenv("HIVE_URL"),
+		hiveAPIKey:       os.Getenv("HIVE_API_KEY"),
 		t:                tmpl,
 	}
 
@@ -163,20 +165,31 @@ func (s *service) adminPage(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not communicate with login system", http.StatusInternalServerError)
 			return
 		}
-		res, err = http.Get(s.plsURL + "/api/user/" + url.PathEscape(body.User) + "/darkmode/switch")
+		req, err = http.NewRequest(
+			http.MethodGet,
+			s.hiveURL + "/api/v1/user/" + url.PathEscape(body.User) + "/permission/switch",
+			nil
+		)
 		if err != nil {
-			slog.Error("Could not send request to pls", "url", s.plsURL, "error", err)
-			http.Error(w, "Could not contact pls", http.StatusInternalServerError)
+			slog.Error("Failed to build request to Hive", "error", err)
+			http.Error(w, "Could not contact Hive", http.StatusInternalServerError)
+			return
+		}
+		req.Header.Set("Authorization", "Bearer " + s.hiveAPIKey)
+		res, err = http.DefaultClient.Do(req)
+		if err != nil {
+			slog.Error("Could not send request to Hive", "url", s.hiveURL, "error", err)
+			http.Error(w, "Could not contact Hive", http.StatusInternalServerError)
 			return
 		}
 		if res.StatusCode != http.StatusOK {
-			http.Error(w, "Could not get permission status from pls", http.StatusInternalServerError)
+			http.Error(w, "Could not get permission status from Hive", http.StatusInternalServerError)
 			return
 		}
 		var hasPerm bool
 		if err := json.NewDecoder(res.Body).Decode(&hasPerm); err != nil {
-			slog.Error("Could not parse request from pls", "url", s.plsURL, "error", err)
-			http.Error(w, "Could not communicate with pls", http.StatusInternalServerError)
+			slog.Error("Could not parse request from Hive", "url", s.hiveURL, "error", err)
+			http.Error(w, "Could not communicate with Hive", http.StatusInternalServerError)
 			return
 		}
 		if !hasPerm {
