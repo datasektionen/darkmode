@@ -168,7 +168,7 @@ func (s *service) adminPage(w http.ResponseWriter, r *http.Request) {
 		req, err = http.NewRequest(
 			http.MethodGet,
 			s.hiveURL + "/api/v1/user/" + url.PathEscape(body.User) + "/permission/switch",
-			nil
+			nil,
 		)
 		if err != nil {
 			slog.Error("Failed to build request to Hive", "error", err)
