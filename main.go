@@ -165,7 +165,7 @@ func (s *service) adminPage(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Could not communicate with login system", http.StatusInternalServerError)
 			return
 		}
-		req, err = http.NewRequest(
+		req, err := http.NewRequest(
 			http.MethodGet,
 			s.hiveURL + "/api/v1/user/" + url.PathEscape(body.User) + "/permission/switch",
 			nil,
