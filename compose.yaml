@@ -10,13 +10,29 @@ services:
       - HIVE_URL=http://login:7004
       - HIVE_API_KEY=:)
       - REDIS_URL=redis://:darkmode@redis:6379
-    env_file:
-      - .env
+      - DATABASE_URL=postgres://darkmode:darkmode@db:5432/darkmode
     ports: [ 2000:2000 ]
     develop:
       watch:
         - path: .
           action: rebuild
+  db:
+    image: 'postgres:latest'
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: darkmode
+      POSTGRES_PASSWORD: darkmode
+      POSTGRES_DB: darkmodedb
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "sh -c 'pg_isready -d darkmode -U darkmode'"
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   redis:
     image: redis:7-alpine3.19
     command: redis-server --save 20 1 --loglevel warning --requirepass darkmode
