@@ -12,6 +12,9 @@ services:
       - REDIS_URL=redis://:darkmode@redis:6379
       - DATABASE_URL=postgres://darkmode:darkmode@db:5432/darkmode
     ports: [ 2000:2000 ]
+    depends_on:
+      db:
+        condition: service_healthy
     develop:
       watch:
         - path: .
@@ -23,7 +26,7 @@ services:
     environment:
       POSTGRES_USER: darkmode
       POSTGRES_PASSWORD: darkmode
-      POSTGRES_DB: darkmodedb
+      POSTGRES_DB: darkmode
     healthcheck:
       test:
         - "CMD-SHELL"
