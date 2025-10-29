@@ -5,9 +5,9 @@ services:
       - PORT=2000
       - DARKMODE=true
       - LOGIN_FRONTEND_URL=http://localhost:7002
-      - LOGIN_API_URL=http://login:7002
+      - LOGIN_API_URL=http://nyckeln:7002
       - LOGIN_API_KEY=:)
-      - HIVE_URL=http://login:7004
+      - HIVE_URL=http://nyckeln:7004
       - HIVE_API_KEY=:)
       - REDIS_URL=redis://:darkmode@redis:6379
       - DATABASE_URL=postgres://darkmode:darkmode@db:5432/darkmode
@@ -35,10 +35,37 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
-
   redis:
     image: redis:7-alpine3.19
     command: redis-server --save 20 1 --loglevel warning --requirepass darkmode
-  login:
+  nyckeln:
     image: ghcr.io/datasektionen/nyckeln-under-dorrmattan
-    ports: [ 7002:7002 ]
+    ports:
+      - 7002:7002
+      - 7004:7004
+    configs:
+      - source: nyckeln.yaml
+        target: /config.yaml
+
+configs:
+  nyckeln.yaml:
+    content: |
+      users:
+        - ug_kth_id: some-id
+          kth_id: turetek
+          email: turetek@kth.se
+          first_name: Ture
+          family_name: Teknolog
+          hive_tags:
+            - id: personal_email
+              content: turetek@gmail.com
+
+      hive:
+        groups:
+          - name: Systemansvarig
+            id: d-sys
+            domain: example.com
+            members:
+              - turetek
+            permissions:
+              - id: switch
