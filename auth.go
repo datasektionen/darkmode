@@ -2,15 +2,25 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/oauth2"
 )
+
+type Permission struct {
+	Id    string
+	Scope string
+}
 
 func InitOIDC(ctx context.Context) (oauth2.Config, *oidc.IDTokenVerifier) {
 	provider, err := oidc.NewProvider(ctx, os.Getenv("OIDC_PROVIDOR"))
@@ -35,12 +45,38 @@ func InitOIDC(ctx context.Context) (oauth2.Config, *oidc.IDTokenVerifier) {
 	return oauth2Config, verifier
 }
 
-func Auth(w http.ResponseWriter, r *http.Request, oauth2Config oauth2.Config) (string, int, error) {
+func RandString(nByte int) (string, error) {
+	b := make([]byte, nByte)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func SetCallbackCookie(w http.ResponseWriter, r *http.Request, name, value string) {
+	c := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		MaxAge:   int(time.Hour.Seconds()),
+		Secure:   r.TLS != nil,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, c)
+}
+
+func Auth(w http.ResponseWriter, r *http.Request, oauth2Config oauth2.Config) (string, bool, error) {
 	cookie, err := r.Cookie("session")
 
 	if err != nil || cookie.Value == "" {
-		http.Redirect(w, r, oauth2Config.AuthCodeURL("test"), http.StatusFound)
-		return "", 0, err
+		state, err := RandString(16)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return "", false, err
+		}
+		SetCallbackCookie(w, r, "state", state)
+
+		http.Redirect(w, r, oauth2Config.AuthCodeURL(state), http.StatusFound)
+		return "", false, err
 	}
 
 	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
@@ -51,90 +87,82 @@ func Auth(w http.ResponseWriter, r *http.Request, oauth2Config oauth2.Config) (s
 	})
 
 	if err != nil {
-		panic(err.Error())
+		http.Error(w, "jwt parse error", http.StatusBadRequest)
+		return "", false, err
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
 
 	sub := claims["sub"].(string)
-	auth := int(claims["permissions"].(float64))
+	auth := claims["auth"].(bool)
 
 	return sub, auth, nil
 }
 
 func (s *Service) HandleOAuth2(w http.ResponseWriter, r *http.Request) {
 	// Verify state and errors.
+	state, err := r.Cookie("state")
+	if err != nil {
+		http.Error(w, "state not found", http.StatusBadRequest)
+		return
+	}
+
+	if r.URL.Query().Get("state") != state.Value {
+		http.Error(w, "state did not match", http.StatusBadRequest)
+		return
+	}
+
 	oauth2Token, err := s.oauth2Config.Exchange(s.ctx, r.URL.Query().Get("code"))
 	if err != nil {
-		panic(err.Error())
+		http.Error(w, "failed to exchange code", http.StatusBadRequest)
+		return
 	}
 
 	// Extract the ID Token from OAuth2 token.
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		panic("No id token")
+		http.Error(w, "No id token", http.StatusBadRequest)
+		return
 	}
 
 	// Parse and verify ID Token payload.
 	idToken, err := s.verifier.Verify(s.ctx, rawIDToken)
 	if err != nil {
-		panic(err.Error())
+		http.Error(w, "Failed to verify id token", http.StatusBadRequest)
+		return
 	}
 
-	// Get permissions from HIVE
-	url := fmt.Sprintf("%s/user/%s/permissions", os.Getenv("HIVE_API_URL"), idToken.Subject)
-
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + os.Getenv("HIVE_API_KEY")
-
-	// Create a new request using http
-	req, err := http.NewRequest("GET", url, nil)
-
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
+	var claims struct {
+		Permissions []Permission `json:"permissions"`
 	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Error while reading the response bytes:", err)
+	if err := idToken.Claims(&claims); err != nil {
+		http.Error(w, "Failed to extract claims", http.StatusBadRequest)
+		return
 	}
-	var perm []Permission
-	json.Unmarshal(body, &perm)
 
-	var permission int
-	var permString string
+	permission := false
 
-	for i := range perm {
-		if perm[i].Id == "manager" {
-			permission = ADMIN
-			permString = "manager"
-		}
-
-		if perm[i].Id == "user" && permission != ADMIN {
-			permission = USER
-			permString = "user"
+	for _, perm := range claims.Permissions {
+		if perm.Id == "switch" {
+			permission = true
 		}
 	}
 
 	key := []byte(os.Getenv("APP_SECRET_KEY"))
 	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["iss"] = "pax"
-	claims["sub"] = idToken.Subject
-	claims["auth"] = permission
+	tokenClaims := token.Claims.(jwt.MapClaims)
+	tokenClaims["iss"] = "darkmode"
+	tokenClaims["sub"] = idToken.Subject
+	tokenClaims["auth"] = permission
 
 	signedToken, err := token.SignedString(key)
 
 	if err != nil {
-		panic(err.Error())
+		http.Error(w, "Failed to sign jwt", http.StatusInternalServerError)
+		return
 	}
+
+	slog.Info("Loging in user", "user", idToken.Subject, "admin", permission)
 
 	cookie := http.Cookie{
 		Name:     "session",
@@ -146,8 +174,6 @@ func (s *Service) HandleOAuth2(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	}
 
-	log.Printf("user %s logged in with permission %s", idToken.Subject, permString)
-
 	http.SetCookie(w, &cookie)
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/admin", http.StatusFound)
 }
