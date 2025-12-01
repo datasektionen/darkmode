@@ -28,7 +28,7 @@ job "darkmode" {
       template {
         data        = <<ENV
 {{ with nomadVar "nomad/jobs/darkmode" }}
-OIDC_CLIENT_SECRET={{ .oidc_clinet_secret }}
+OIDC_CLIENT_SECRET={{ .oidc_client_secret }}
 DATABASE_URL=postgresql://darkmode:{{ .database_password }}@postgres.dsekt.internal:5432/darkmode
 {{ end }}
 PORT={{ env "NOMAD_PORT_http" }}
