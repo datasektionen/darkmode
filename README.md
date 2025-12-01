@@ -10,13 +10,13 @@ GET `https://darkmode.datasektionen.se/` - returns the current darkmode status a
 |----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `PORT`               | The port to listen for connections on                                                                                                                                     |
 | `WEBHOOKS`           | A list of urls separated by commas. A GET request will be sent to each of these with the header `X-Darkmode-Event: updated` when the darkmode status (might have) changed |
-| `LOGIN_FRONTEND_URL` | Origin at which the browser can reach the login system's frontend                                                                                                         |
-| `LOGIN_API_URL`      | Origin at which the backend can reach the login system's api                                                                                                              |
-| `LOGIN_API_KEY`      | API key for login                                                                                                                                                         |
-| `HIVE_URL`           | Origin to hive                                                                                                                                                            |
-| `HIVE_API_KEY`       | API key for Hive with `$hive:api-check-permissions` permission                                                                                                            |
-| `REDIS_URL`          | Where to connect to redis. Example: `redis://:password@hostname:6379`                                                                                                     |
+| `OIDC_PROVIDOR`      | The url to oidc provider                                                                                                                                                  |
+| `OIDC_CLIENT_ID`     | Client id at oidc provide                                                                                                                                                 |
+| `OIDC_CLIENT_SECRET` | Secret used for connecting to oidc                                                                                                                                        |
+| `OIDC_REDIRECT_URL`  | Url to redirecet back to after successful login                                                                                                                           |
+| `DATABASE_URL`       | Connection settings for connecting to database. Format: postgres://username>:pasword@host:port/database                                                                   |
+
 
 ## Other systems
 
-Darkmode depends on login and Hive. The system name in Hive is `darkmode` and it checks the permission `switch`.
+Darkmode depends on sso and hive. The system name in Hive is `darkmode` and it checks the permission `switch`.
