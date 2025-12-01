@@ -32,7 +32,7 @@ OIDC_CLIENT_SECRET={{ .oidc_clinet_secret }}
 DATABASE_URL=postgresql://darkmode:{{ .database_password }}@postgres.dsekt.internal:5432/darkmode
 {{ end }}
 PORT={{ env "NOMAD_PORT_http" }}
-OIDC_PROVIDOR=http://sso.datasektionen.se/op
+OIDC_PROVIDOR=https://sso.datasektionen.se/op
 OIDC_CLIENT_ID=darkmode
 OIDC_REDIRECT_URL=https://darkmode.datasektionen.se/oidc/callback
 WEBHOOKS=http://taitan.nomad.dsekt.internal/
