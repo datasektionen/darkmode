@@ -29,8 +29,6 @@ type Service struct {
 	oauth2Config oauth2.Config
 	verifier     *oidc.IDTokenVerifier
 	ctx          context.Context
-	hiveURL      string
-	hiveAPIKey   string
 	webhookURLs  []string
 	t            *template.Template
 }
@@ -75,8 +73,6 @@ func main() {
 		oauth2Config: oauth2Config,
 		verifier:     verifier,
 		ctx:          ctx,
-		hiveURL:      os.Getenv("HIVE_URL"),
-		hiveAPIKey:   os.Getenv("HIVE_API_KEY"),
 		t:            tmpl,
 	}
 
